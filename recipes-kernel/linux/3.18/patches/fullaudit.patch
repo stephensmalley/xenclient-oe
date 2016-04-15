@@ -1,0 +1,61 @@
+Index: linux-3.18.28/kernel/audit.c
+===================================================================
+--- linux-3.18.28.orig/kernel/audit.c
++++ linux-3.18.28/kernel/audit.c
+@@ -85,7 +85,7 @@ u32		audit_ever_enabled;
+ EXPORT_SYMBOL_GPL(audit_enabled);
+ 
+ /* Default state when kernel boots without any parameters. */
+-static u32	audit_default;
++static u32	audit_default = 1;
+ 
+ /* If auditing cannot proceed, audit_failure selects what happens. */
+ static u32	audit_failure = AUDIT_FAIL_PRINTK;
+@@ -200,7 +200,6 @@ void audit_panic(const char *message)
+ 	case AUDIT_FAIL_SILENT:
+ 		break;
+ 	case AUDIT_FAIL_PRINTK:
+-		if (printk_ratelimit())
+ 			pr_err("%s\n", message);
+ 		break;
+ 	case AUDIT_FAIL_PANIC:
+@@ -271,7 +270,6 @@ void audit_log_lost(const char *message)
+ 	}
+ 
+ 	if (print) {
+-		if (printk_ratelimit())
+ 			pr_warn("audit_lost=%u audit_rate_limit=%u audit_backlog_limit=%u\n",
+ 				atomic_read(&audit_lost),
+ 				audit_rate_limit,
+@@ -393,10 +391,7 @@ static void audit_printk_skb(struct sk_b
+ 	char *data = nlmsg_data(nlh);
+ 
+ 	if (nlh->nlmsg_type != AUDIT_EOE) {
+-		if (printk_ratelimit())
+ 			pr_notice("type=%d %s\n", nlh->nlmsg_type, data);
+-		else
+-			audit_log_lost("printk limit exceeded");
+ 	}
+ 
+ 	audit_hold_skb(skb);
+@@ -1384,7 +1379,6 @@ struct audit_buffer *audit_log_start(str
+ 					continue;
+ 			}
+ 		}
+-		if (audit_rate_check() && printk_ratelimit())
+ 			pr_warn("audit_backlog=%d > audit_backlog_limit=%d\n",
+ 				skb_queue_len(&audit_skb_queue),
+ 				audit_backlog_limit);
+Index: linux-3.18.28/kernel/auditsc.c
+===================================================================
+--- linux-3.18.28.orig/kernel/auditsc.c
++++ linux-3.18.28/kernel/auditsc.c
+@@ -89,7 +89,7 @@
+ #define MAX_PROCTITLE_AUDIT_LEN 128
+ 
+ /* number of audit rules */
+-int audit_n_rules;
++int audit_n_rules = 1;
+ 
+ /* determines whether we collect data for signals sent */
+ int audit_signals;
